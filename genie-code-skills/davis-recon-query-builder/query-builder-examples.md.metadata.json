@@ -1,0 +1,5 @@
+{
+  "summary": "Updated query-builder-examples.md with the exact ingestion schema format required by the user, including the key_col mapping logic and UNION ALL unpivot.",
+  "updatedAt": "2026-07-10T06:43:37.680314Z",
+  "userFacing": true
+}

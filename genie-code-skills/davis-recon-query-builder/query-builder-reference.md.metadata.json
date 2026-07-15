@@ -1,0 +1,5 @@
+{
+  "summary": "Updated query-builder-reference.md to match the strict ingestion table schema (key_col1, key_col2, etc.) and exact column mapping requirements.",
+  "updatedAt": "2026-07-10T06:43:23.053108Z",
+  "userFacing": true
+}
