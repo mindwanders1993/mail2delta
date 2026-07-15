@@ -1,0 +1,56 @@
+Here are advanced, intelligence-driven prompts you can feed into Genie to profile the  whs_sellout_txt_load  job:
+  ### 1. End-to-End Job & Task Duration (Finding the Bottleneck)
+
+  Intelligence: We need to know if the bottleneck is Task 1 (File Copy/Network), Task 2 (Bronze schema
+  enforcement), or Task 3 (Silver joins/lookups).
+
+  • Prompt 1: "Using the  system.lakehouse.job_runs  and  system.lakehouse.job_tasks  tables, find the last 50 runs
+  of the job named  whs_sellout_txt_load . Break down the total job duration into the average execution time of its
+  individual tasks (e.g., Task 1 file copy vs Task 2 bronze vs Task 3 silver). Which task takes the longest on
+  average?"
+  • Prompt 2: "For the  whs_sellout_txt_load  job, show me a time-series chart of the Task 3 (Silver dataload)
+  execution duration over the last 30 days. Are there specific days of the week where this task suddenly takes 3x
+  longer to complete?"
+
+  ### 2. Cluster Utilization & Sizing (CPU & Memory)
+
+  Intelligence: Many pipelines use a standard cluster size (e.g., 4 workers, 32GB RAM) for everything. This wastes
+  money on small files and causes Out-Of-Memory (OOM) errors on large files.
+
+  • Prompt 3: "Join  system.lakehouse.job_runs  with  system.compute.clusters  for the  whs_sellout_txt_load  job.
+  What is the driver node type and worker node type being used? Show me the maximum number of workers allocated for
+  this job in the last week."
+  • Prompt 4: "Look at the compute usage for the  whs_sellout_txt_load  job. Based on the cluster size and total
+  execution time, calculate the total DBUs consumed per run. Is the DBU cost trending upwards over the last month?"
+
+  ### 3. Spark Query Performance & Data Skew (The "Spark UI" level)
+
+  Intelligence: To optimize the DAG, we look for data spill (writing to disk because memory is full) and skewed
+  partitions. Genie can query the SQL execution history to find these.
+
+  • Prompt 5: "Using  system.query.history , find all queries executed by the  whs_sellout_txt_load  job in the
+  last 7 days. Sort them by the longest execution time. Show me the query text, duration, and the total bytes
+  read/written for the top 10 slowest queries."
+  • Prompt 6: "For the queries executed by  whs_sellout_txt_load  in  system.query.history , show me any queries
+  where  spill_to_disk_bytes  is greater than 0. This indicates memory pressure where Spark had to write data to
+  disk instead of keeping it in RAM."
+  • Prompt 7: "Look at the  system.query.history  for the Silver dataload task of  whs_sellout_txt_load . Are there
+  any queries where the time spent compiling the query (planning time) is significantly higher than the actual
+  execution time? This might indicate a highly complex DAG or too many files in the Delta table."
+
+  ### 4. Optimize Recommendations (Letting Genie do the math)
+
+  • Prompt 8: "Based on the data volume processed by the  whs_sellout_txt_load  job over the last 30 days (from
+  system.query.history ), and the cluster size used (from  system.compute.clusters ), does the cluster appear over-
+  provisioned? For example, are we using an 8-worker cluster to process less than 100MB of data?"
+
+  ### 💡 Pro-Tip for your analysis:
+
+  Once Genie flags a specific  run_id  or  query_id  using Prompts 5 or 6 (e.g., finding a query that spilled 50GB
+  to disk), take that specific ID and open the Databricks Spark UI.
+
+  1. Go to the SQL / DataFrame tab in the UI for that specific run.
+  2. Look at the DAG. The stage highlighted in red or taking the most time is usually a  SortMergeJoin  or
+  Exchange  (shuffle) step that lacks adequate memory.
+  3. This is exactly where you can apply optimizations like Broadcast Joins (if looking up small master data) or
+  increasing the  spark.sql.shuffle.partitions  size!
