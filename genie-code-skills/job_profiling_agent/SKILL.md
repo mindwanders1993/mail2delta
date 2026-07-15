@@ -1,3 +1,7 @@
+---
+name: job-profiling-agent
+description: Use this skill to autonomously profile Databricks jobs, identify performance bottlenecks, detect memory spills, and recommend compute optimizations.
+---
 # Databricks Genie Job Profiling Agent - System Prompt
 
 ## Karpathy Core Principles (Mandatory)
