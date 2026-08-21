@@ -1,0 +1,78 @@
+# customer_parsing_rules.yaml
+# Declarative parsing rules for Accounts Receivable (AR) email extraction.
+# To support a new partner/customer email format, simply add a new block below.
+# No changes to Python source code are required.
+---
+customers:
+
+  KamoShoji:
+    match:
+      subject_regex: '.*加茂商事.*'
+      sender_email: null
+    strategy: vertical_key_value
+    code_source:
+      table_index: 0
+      target_regex: '請求先コード'
+    amount_source:
+      table_index: 0
+      target_regex: '.*(支払額|入金額|振込).*'
+
+  Mega:
+    match:
+      subject_regex: '.*(AEON Sports.*Mega|メガ).*'
+      sender_email: null
+    strategy: zip_columns_across_tables
+    code_source:
+      table_index: 0
+      target_regex: '請求先コード'
+    amount_source:
+      table_index: 1
+      target_regex: '.*(振込金額|支払額|入金額).*'
+
+  Himaraya:
+    match:
+      subject_regex: '.*ヒマラヤ.*'
+      sender_email: null
+    strategy: zip_headers_to_row
+    code_source:
+      table_index: 1
+      is_header: true
+    amount_source:
+      table_index: 1
+      target_regex: '.*(支払額|入金額).*'
+
+  Imoto:
+    match:
+      subject_regex: '.*イモト.*'
+      sender_email: null
+    strategy: zip_rows_in_same_table
+    code_source:
+      table_index: 1
+      target_regex: '^コード$'
+    amount_source:
+      table_index: 1
+      target_regex: '.*(支払額|入金額).*'
+
+  Chiyoda:
+    match:
+      subject_regex: '.*チヨダ.*'
+      sender_email: null
+    strategy: vertical_key_value
+    code_source:
+      table_index: 0
+      target_regex: '請求先コード'
+    amount_source:
+      table_index: 0
+      target_regex: '.*(支払額|振込額).*'
+
+  Xebio:
+    match:
+      subject_regex: '.*ゼビオ.*'
+      sender_email: null
+    strategy: vertical_key_value
+    code_source:
+      table_index: 0
+      target_regex: '請求先コード'
+    amount_source:
+      table_index: 1
+      target_regex: '.*(支払額|入金額).*'

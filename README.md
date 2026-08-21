@@ -1,19 +1,21 @@
 # 🤖 Databricks Autonomous AI Agents (Karpathy OS)
 
-A suite of enterprise-grade, fully autonomous AI Agents designed specifically for the Databricks Workspace Assistant. These agents operate using the `.assistant/skills/` directory structure, allowing the native Databricks AI Assistant to inherit specialized domain knowledge.
+A suite of enterprise-grade, fully autonomous AI Agents and Data Engineering Utilities designed specifically for the Databricks Workspace Assistant and modern Lakehouse pipelines. These tools operate using the `.assistant/skills/` directory structure and modular Python packages.
 
 ## 🏗️ The Architecture (Karpathy Principles)
 
-All agents in this repository are built on a strict **Plan-and-Solve (ReAct)** architecture heavily inspired by Andrej Karpathy's LLM coding principles:
+All agents and utilities in this repository are built on a strict **Plan-and-Solve (ReAct)** architecture heavily inspired by Andrej Karpathy's LLM coding principles:
 
-1. **Think Before Coding:** Agents explicitly state assumptions and ask for clarification before generating PySpark or Databricks SQL.
-2. **Simplicity First:** Agents are instructed to write the minimum code necessary, avoiding bloated abstractions.
-3. **Surgical Changes:** When fixing code, agents modify only the failing lines and clean up their own mess.
-4. **Goal-Driven Execution:** Agents draft dynamic execution graphs using verifiable success criteria (e.g., `1. [Analyze Nulls] -> verify: [null_count metrics successfully printed]`) before executing.
+1. **Think Before Coding:** Agents explicitly state assumptions and ask for clarification before generating code.
+2. **Simplicity First:** Agents and utilities write the minimum code necessary, avoiding bloated abstractions.
+3. **Surgical Changes:** Modify only what is necessary and clean up transient scratch files.
+4. **Goal-Driven Execution:** Dynamic execution graphs with verifiable success criteria and automated quality gates.
+
+---
 
 ## 👥 The Agent Roster
 
-This repository contains four specialized Databricks Agents:
+This repository contains specialized Databricks Agents and Data Utilities:
 
 ### 1. `job_profiling_agent` (The FinOps Troubleshooter)
 *   **Role:** Analyzes Databricks Job runs and Spark performance bottlenecks.
@@ -30,6 +32,12 @@ This repository contains four specialized Databricks Agents:
 ### 4. `skill_refiner` (The Meta-Architect)
 *   **Role:** A Self-Improving Meta-Agent that watches and upgrades the other three.
 *   **Capabilities:** Analyzes chat history for failed code or user corrections, and autonomously rewrites the underlying `SKILL.md` or `cheatsheet.md` files of other agents to permanently fix failure patterns.
+
+### 5. `msgraph_email_core` & `ar_collections_pipeline` (Email Ingestion Framework)
+*   **Role:** Platform-agnostic MS Graph email ingestion and declarative parsing utility.
+*   **Capabilities:** Pure synchronous, requests-based client with delta token query support, chainable email filtering, robust HTML table extraction into DataFrames, and YAML-driven partner matrix parsing.
+
+---
 
 ## 🚀 How to Deploy in Databricks
 

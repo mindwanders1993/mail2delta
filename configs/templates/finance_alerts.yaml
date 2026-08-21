@@ -1,0 +1,39 @@
+pipeline_name: "finance_bi_alerts_pipeline"
+version: "1.0"
+description: "Ingests automated BI connection alerts and error notifications."
+
+# 1. Connection & Authentication
+connection:
+  tenant_id: "3bfeb222-e42c-4535-aace-ea6f7751369b"
+  client_id: "be07a159-b680-40ff-a137-0e921c117bb6"
+  secret_scope: "sadp-jpdna-pool-secret_scope-dev"
+  secret_key: "sharepoint_secret"
+  mailbox: "svc_lak_notification@adidas.com"
+
+# 2. Email Filtering Rules
+filter:
+  top_n: 50
+  sender_contains:
+    - "PowerAutomateNoReply@microsoft.com"
+  subject_must_contain: "connection isn't working"
+
+# 3. Metadata Extraction Rules
+metadata_extractors:
+  - name: "alert_details"
+    source: "subject_or_body"
+    regex: "(?P<account_email>[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+)\\s+(?P<issue_type>connection isn't working)"
+
+# 4. HTML Table Extraction Rules
+table_extraction:
+  enabled: true
+  header_row: 0
+  column_mapping:
+    "Error Code": "error_code"
+    "Timestamp": "failure_time"
+    "Details": "error_details"
+
+# 5. Delta Lake Output Targets
+sink:
+  data_table: "finance_dev.bi_alerts_table"
+  audit_table: "finance_dev.bi_alerts_audit_log"
+  save_mode: "append"

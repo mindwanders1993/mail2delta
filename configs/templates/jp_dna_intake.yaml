@@ -1,0 +1,42 @@
+pipeline_name: "jp_dna_intake_pipeline"
+version: "1.0"
+description: "Ingests weekly JP DNA data notifications, extracts table rows, and parses Year/Week metadata."
+
+# 1. Connection & Authentication
+connection:
+  tenant_id: "3bfeb222-e42c-4535-aace-ea6f7751369b"
+  client_id: "be07a159-b680-40ff-a137-0e921c117bb6"
+  secret_scope: "sadp-jpdna-pool-secret_scope-dev"
+  secret_key: "sharepoint_secret"
+  mailbox: "svc_global_bi@adidas.com"
+
+# 2. Email Filtering Rules
+filter:
+  top_n: 25
+  sender_contains: 
+    - "noreply@adidas.com"
+    - "svc_global_bi@adidas.com"
+  subject_must_contain: "JP DNA"  # Case-insensitive substring match
+
+# 3. Metadata Extraction Rules (Regex capture groups)
+metadata_extractors:
+  # Matches patterns like '再 2026_31W_取り込み明細.csv' or '2026_31W_取り込み明細.csv'
+  - name: "file_info"
+    source: "subject_or_body"
+    regex: "(?:再\\s*)?(?P<year>\\d{4})_(?P<week>\\d{1,2}W)_(?P<report_name>[^\\s.]+)"
+
+# 4. HTML Table Extraction Rules
+table_extraction:
+  enabled: true
+  header_row: 0
+  column_mapping:
+    "Subject": "email_subject_text"
+    "From": "sender_email"
+    "Received": "received_timestamp"
+    "Status": "process_status"
+
+# 5. Delta Lake Output Targets
+sink:
+  data_table: "sadp_jpdna_dev.email_extracted_tables"
+  audit_table: "sadp_jpdna_dev.email_ingestion_audit_log"
+  save_mode: "append"
