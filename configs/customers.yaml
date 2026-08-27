@@ -1,0 +1,123 @@
+# configs/customers.yaml
+# Declarative Extraction & Deduplication Rules for AR Ingestion
+# All customer rules live here. Zero Python code modification required for new customers.
+---
+customers:
+
+  KamoShoji:
+    subject_regex: "KamoShoji|加茂商事"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "KamoShoji"
+      code_regex: "請求先コード"
+      amount_regex: "支払額"
+      currency: "JPY"
+      default_label: "3/31 支払額"
+
+  Chiyoda:
+    subject_regex: "Chiyoda|チヨダ"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "Chiyoda"
+      code_regex: "請求先コード"
+      amount_regex: "支払額|振込額"
+      currency: "JPY"
+      default_label: "支払額"
+
+  GFoot:
+    subject_regex: "G-FOOT|ジーフット|Aeon Sports.*G-foot"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "GFoot"
+      code_regex: "請求先コード"
+      amount_regex: "入金額|支払額|振込"
+      currency: "JPY"
+      default_label: "入金額"
+
+  ABCMart:
+    subject_regex: "ABC-MART|ABC MART|ABC"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "ABCMart"
+      code_regex: "請求先コード"
+      amount_regex: "支払額|入金額|振込"
+      currency: "JPY"
+      default_label: "支払額"
+
+  Mega:
+    subject_regex: "AEON Sports.*Mega|メガ"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "Mega"
+      code_regex: "請求先コード"
+      amount_regex: "振込金額|支払額|入金額"
+      currency: "JPY"
+      default_label: "振込金額"
+
+  Himaraya:
+    subject_regex: "ヒマラヤ|Himaraya"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "Himaraya"
+      code_regex: "請求先コード|コード"
+      amount_regex: "支払額|入金額"
+      currency: "JPY"
+      default_label: "支払額"
+
+  Amazon:
+    subject_regex: "Amazon|アマゾン"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "Amazon"
+      code_regex: "請求先コード|Vendor Code|コード"
+      amount_regex: "支払額|入金額|Payment"
+      currency: "JPY"
+      default_label: "支払額"
+
+  Imoto:
+    subject_regex: "イモト|Imoto"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "Imoto"
+      code_regex: "コード"
+      amount_regex: "支払額|入金額"
+      prefix_code: "79"
+      currency: "JPY"
+      default_label: "支払額"
+
+  Xebio:
+    subject_regex: "ゼビオ|Xebio"
+    strategy: "key_value_table"
+    merge_keys:
+      - "customer_code"
+      - "payment_due_label"
+    params:
+      customer_name: "Xebio"
+      code_regex: "請求先コード"
+      amount_regex: "支払額|入金額"
+      currency: "JPY"
+      default_label: "支払額"
