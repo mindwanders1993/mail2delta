@@ -1,6 +1,6 @@
 """
-src.router.strategy_router
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+src.transformers.strategy_router
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The Switchboard: Dynamically matches incoming emails against YAML rules
 and dispatches them to the corresponding extraction strategy.
 """
@@ -9,8 +9,8 @@ import os
 import re
 from typing import Any
 import yaml
-from strategies.base_strategy import BaseEmailStrategy
-from strategies.key_value_strategy import KeyValueStrategy
+from transformers.base import BaseEmailStrategy
+from transformers.key_value_parser import KeyValueParser
 
 
 class StrategyRouter:
@@ -27,8 +27,8 @@ class StrategyRouter:
         """
         self.config = self._load_config(config_source)
         self.strategies: dict[str, BaseEmailStrategy] = {
-            "key_value_table": KeyValueStrategy(),
-            "vertical_key_value": KeyValueStrategy(),
+            "key_value_table": KeyValueParser(),
+            "vertical_key_value": KeyValueParser(),
         }
 
     def register_strategy(self, name: str, strategy: BaseEmailStrategy) -> None:

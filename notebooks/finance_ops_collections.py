@@ -2,15 +2,15 @@
 notebooks.finance_ops_collections
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Production Databricks Job Orchestrator for Accounts Receivable (AR) Ingestion.
-Configured dynamically via environment variables and Databricks secrets.
+Decoupled Architecture: Connectors -> Transformers -> Sinks.
 """
 
 import os
 import sys
 import pandas as pd
-from core.delta_sink import DeltaSink
-from core.ms_graph_client import MSGraphClient
-from router.strategy_router import StrategyRouter
+from connectors.ms_graph_client import MSGraphClient
+from sinks.delta_sink import DeltaSink
+from transformers.strategy_router import StrategyRouter
 
 
 def get_credential(key: str, default: str | None = None) -> str:
@@ -46,10 +46,10 @@ def run_pipeline(spark_session) -> None:
     Executes the end-to-end email ingestion pipeline:
     1. Reads environment variables for Azure & Databricks configuration.
     2. Computes High-Watermark date with a 7-day safety buffer.
-    3. Fetches candidate messages from MS Graph API.
+    3. Fetches candidate messages from MS Graph API via Connectors.
     4. Filters out already processed email IDs (Gate 1).
-    5. Routes new emails through the declarative YAML Strategy Router.
-    6. Merges records into the production Delta table with business keys (Gate 2).
+    5. Routes new emails through Transformers Strategy Router.
+    6. Merges records into the production Delta table via Sinks (Gate 2).
     """
     # 1. Environment-Driven Configuration
     tenant_id = get_credential("AZURE_TENANT_ID")
@@ -64,6 +64,7 @@ def run_pipeline(spark_session) -> None:
     config_path = os.getenv("YAML_CONFIG_PATH", "configs/customers.yaml")
     pipeline_timezone = os.getenv("PIPELINE_TIMEZONE", "Asia/Tokyo")
 
+    # Decoupled components initialization
     router = StrategyRouter(config_path)
     client = MSGraphClient(tenant_id, client_id, client_secret, mailbox)
     sink = DeltaSink(spark_session)
@@ -97,11 +98,11 @@ def run_pipeline(spark_session) -> None:
     except Exception:
         processed_ids = set()
 
-    # 3. Fetch candidate messages from MS Graph
+    # 3. Fetch candidate messages from MS Graph (Connectors Layer)
     emails = client.fetch_messages(top=50, filter_query=filter_query)
     print(f"📥 Fetched {len(emails)} candidate messages from inbox.")
 
-    # 4. Process & Route Emails
+    # 4. Process & Route Emails (Transformers Layer)
     grouped_records: dict[tuple, list[dict]] = {}
 
     for email in emails:
@@ -116,7 +117,7 @@ def run_pipeline(spark_session) -> None:
                 grouped_records[keys_tuple] = []
             grouped_records[keys_tuple].append(record)
 
-    # 5. Gate 2: Idempotent MERGE into Delta Lake
+    # 5. Gate 2: Idempotent MERGE into Delta Lake (Sinks Layer)
     total_saved = 0
     for keys_tuple, records in grouped_records.items():
         keys_list = list(keys_tuple)

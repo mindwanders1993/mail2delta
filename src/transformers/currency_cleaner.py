@@ -1,6 +1,6 @@
 """
-src.core.currency_cleaner
-~~~~~~~~~~~~~~~~~~~~~~~~~
+src.transformers.currency_cleaner
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Sanitizes global financial currency strings and accounting representations into standard floats.
 """
 
@@ -39,12 +39,10 @@ class CurrencyCleaner:
         if not text or text in ["-", "―", "ー", "/", "#DIV/0!", "#N/A", "#VALUE!", "nan", "None", "null"]:
             return None
 
-        # Check negative convention across global notations
         is_negative = False
         if ("-" in text) or (text.startswith("(") and text.endswith(")")) or ("△" in text) or ("▲" in text):
             is_negative = True
 
-        # Strip all currency symbols, letters, spaces, commas, kanji, and negative symbols
         cleaned_digits = re.sub(r"[^\d.]", "", text)
         if not cleaned_digits:
             return None

@@ -1,5 +1,5 @@
 """
-src.strategies.key_value_strategy
+src.transformers.key_value_parser
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Concrete strategy for extracting financial records from Key-Value and Table-Row formatted emails.
 Handles Japanese and Global AR reconciliation formats deterministically without LLMs.
@@ -7,12 +7,12 @@ Handles Japanese and Global AR reconciliation formats deterministically without 
 
 import re
 from typing import Any
-from core.currency_cleaner import CurrencyCleaner
-from core.html_parser import HTMLParser
-from strategies.base_strategy import BaseEmailStrategy
+from connectors.html_parser import HTMLParser
+from transformers.base import BaseEmailStrategy
+from transformers.currency_cleaner import CurrencyCleaner
 
 
-class KeyValueStrategy(BaseEmailStrategy):
+class KeyValueParser(BaseEmailStrategy):
     """
     Extracts customer code and payment amount from email HTML bodies containing
     structured key-value tables or labeled text rows.
@@ -27,11 +27,11 @@ class KeyValueStrategy(BaseEmailStrategy):
         Executes deterministic extraction for key-value formatted AR emails.
 
         Args:
-            email_dict: Standardized email dictionary.
-            params: Parameters dictionary from YAML config (regexes, prefix, currency, etc.).
+            email_dict: Standardized email dictionary from MSGraphClient.
+            params: Parameters dictionary from YAML config.
 
         Returns:
-            Standardized record dictionary or None if mandatory fields cannot be extracted.
+            Standardized record dictionary or None if extraction criteria not met.
         """
         html_body = email_dict.get("html_body", "")
         if not html_body:
@@ -94,7 +94,6 @@ class KeyValueStrategy(BaseEmailStrategy):
         lines = [line.strip() for line in text.split("\n") if line.strip()]
         for idx, line in enumerate(lines):
             if re.search(pattern, line, re.IGNORECASE):
-                # Check next line for standalone digits/code
                 if idx + 1 < len(lines):
                     next_line = lines[idx + 1]
                     m_next = re.match(r"^([A-Za-z0-9\-_]{3,25})$", next_line)

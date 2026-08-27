@@ -2,49 +2,49 @@
 
 **mail2delta** is an enterprise-grade, deterministic email ingestion and financial reconciliation framework that streams unstructured emails from **Microsoft 365 (MS Graph API)** directly into **Databricks Delta Lake**.
 
-Built from first principles: **Zero-LLM dependency**, **100% deterministic rule-based parsing**, **YAML-driven configuration**, and **idempotent composite-key MERGE upserts**.
+Built from first principles with a strictly decoupled 3-tier architecture: **Connectors (Input)**, **Transformers (Extraction & Rules)**, and **Sinks (Storage)**.
 
 ---
 
-## 🏗️ Architecture
-
-The framework is structured into 4 decoupled layers:
+## 🏗️ Decoupled Architecture
 
 ```text
 mail2delta/
 ├── configs/
-│   └── customers.yaml              # Layer 1: Declarative rules & custom merge_keys
+│   └── customers.yaml              # Declarative rules & customer merge_keys
 │
 ├── src/
-│   ├── core/                       # Layer 2: Universal I/O & string cleaners
+│   ├── connectors/                 # 1. CORE I/O (SOURCE) & TOOLS
 │   │   ├── ms_graph_client.py      # OAuth2 Entra ID Client & OData fetcher
-│   │   ├── delta_sink.py           # Delta Lake Idempotent Upsert Engine
-│   │   ├── html_parser.py          # HTML-to-text & table normalization
-│   │   └── currency_cleaner.py     # Global currency (¥, $, €, △, ▲) sanitizer
+│   │   └── html_parser.py          # HTML-to-text & table DOM parser
 │   │
-│   ├── strategies/                 # Layer 3: Pluggable extraction strategies
-│   │   ├── base_strategy.py        # Interface contract (extract(email, params))
-│   │   └── key_value_strategy.py   # Deterministic key-value & table row parser
+│   ├── transformers/               # 2. DATA EXTRACTION & BUSINESS RULES
+│   │   ├── base.py                 # Abstract strategy interface (BaseEmailStrategy)
+│   │   ├── key_value_parser.py     # Deterministic key-value & table row parser
+│   │   ├── currency_cleaner.py     # Global currency (¥, $, €, △, ▲) sanitizer
+│   │   └── strategy_router.py      # Declarative YAML router & dispatcher
 │   │
-│   └── router/                     # Layer 4: Dispatcher
-│       └── strategy_router.py      # Matches subject to customer & dispatches strategy
+│   └── sinks/                      # 3. DATA WRITE & STORAGE (SINK)
+│       └── delta_sink.py           # Dynamic composite-key Delta Lake MERGE writer
 │
-└── notebooks/                      # Orchestrator (Databricks Serverless Job)
-    └── finance_ops_collections.py  # High-Watermark + Gate 1 + Router + Gate 2
+└── notebooks/                      # 4. DATABRICKS JOB ORCHESTRATOR
+    └── finance_ops_collections.py  # Connectors -> Transformers -> Sinks
 ```
 
 ---
 
 ## 🛡️ Key Features
 
+* **Strict Domain Isolation:**
+  * **Connectors:** Only knows Microsoft Graph API and DOM parsing. Zero knowledge of business logic or database schemas.
+  * **Transformers:** Only knows regex rules, customer configurations, and currency cleaning. Zero knowledge of network protocols or Spark.
+  * **Sinks:** Only knows Delta Lake `MERGE INTO` SQL and composite keys. Zero knowledge of source protocols or customer emails.
 * **Hybrid High-Watermark & Two-Gate Deduplication:**
-  * **Gate 1 (Driver / Network Filter):** Calculates the high watermark with a 7-day safety buffer. Skips known `email_unique_id`s in memory before parsing.
+  * **Gate 1 (Driver / Network Filter):** Calculates high watermark with a 7-day safety buffer. Skips known `email_unique_id`s in memory before parsing.
   * **Gate 2 (Delta Lake MERGE):** Dynamically constructs an idempotent `MERGE INTO` statement using business composite keys (`customer_code`, `payment_due_label`) defined in YAML. Automatically overwrites corrections without creating duplicates.
 * **Global Currency & Accounting Support:**
-  * Cleanly handles Japanese Yen (`¥`, `￥`, `円`), USD (`$`), Euro (`€`), British Pound (`£`).
+  * Handles Japanese Yen (`¥`, `￥`, `円`), USD (`$`), Euro (`€`), British Pound (`£`).
   * Handles accounting negatives like `(1,000)`, `△500,000`, `▲1,234,567`, and `-500`.
-* **Zero-Code Customer Onboarding:**
-  * Supporting a new partner or email format requires only adding a YAML block in `configs/customers.yaml`.
 
 ---
 

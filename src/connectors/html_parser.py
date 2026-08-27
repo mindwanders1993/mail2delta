@@ -1,8 +1,8 @@
 """
-src.core.html_parser
-~~~~~~~~~~~~~~~~~~~~
-Pure HTML extraction and text/table normalization utility.
-Agnostic of all business logic, languages, and schemas.
+src.connectors.html_parser
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Universal HTML cleaning and table structure parsing tools.
+Pure DOM parsing without any domain-specific business logic.
 """
 
 from typing import Any
@@ -12,13 +12,13 @@ from bs4 import BeautifulSoup
 
 class HTMLParser:
     """
-    Universal HTML cleaner and table extraction helper.
+    Universal HTML cleaner and DOM table extraction utility.
     """
 
     @staticmethod
     def html_to_text(html_content: str) -> str:
         """
-        Converts HTML markup into clean, normalized multi-line plain text.
+        Converts HTML markup into normalized, readable multi-line plain text.
 
         Args:
             html_content: Raw HTML string.
@@ -30,10 +30,10 @@ class HTMLParser:
             return ""
 
         soup = BeautifulSoup(html_content, "html.parser")
-        
-        # Replace break tags and paragraph ends with explicit newlines
-        for br in soup.find_all(["br", "p", "tr"]):
-            br.append("\n")
+
+        # Ensure explicit line breaks on block and table elements
+        for tag in soup.find_all(["br", "p", "tr", "div"]):
+            tag.append("\n")
 
         text = soup.get_text(separator=" ")
         lines = [line.strip() for line in text.split("\n") if line.strip()]
@@ -45,10 +45,10 @@ class HTMLParser:
         Parses all HTML <table> tags into a list of 2D pandas DataFrames.
 
         Args:
-            html_content: Raw HTML string containing zero or more table tags.
+            html_content: Raw HTML string containing table tags.
 
         Returns:
-            List of pandas DataFrames representing extracted tables.
+            List of DataFrames representing extracted tables.
         """
         if not html_content:
             return []
@@ -68,7 +68,7 @@ class HTMLParser:
                 norm_rows = [r + [""] * (max_cols - len(r)) for r in rows]
                 tables.append(pd.DataFrame(norm_rows))
 
-        # Fallback for pipe-delimited text tables if no <table> tags exist
+        # Fallback for pipe-separated ASCII tables
         if not tables and "|" in html_content:
             plain_text = soup.get_text(separator="\n").strip()
             lines = [

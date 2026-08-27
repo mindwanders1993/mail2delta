@@ -1,8 +1,9 @@
 """
-src.core.ms_graph_client
-~~~~~~~~~~~~~~~~~~~~~~~~
-Universal Microsoft Graph API Client for enterprise email and attachment retrieval.
-Supports OAuth2 Client Credentials flow, token caching, OData filtering, and attachment fetching.
+src.connectors.ms_graph_client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Universal Microsoft Graph API Connector.
+Handles Entra ID OAuth2 authentication, token caching, OData email filtering, and attachment retrieval.
+Zero knowledge of business logic, extraction rules, or database schemas.
 """
 
 import logging
@@ -10,13 +11,12 @@ import time
 from typing import Any
 import requests
 
-logger = logging.getLogger("core.ms_graph_client")
+logger = logging.getLogger("connectors.ms_graph_client")
 
 
 class MSGraphClient:
     """
-    Universal Microsoft 365 Email & Attachment Client.
-    Completely decoupled from any downstream business or transformation logic.
+    Universal Microsoft 365 Connector for email and attachment streaming.
     """
 
     def __init__(
@@ -27,13 +27,13 @@ class MSGraphClient:
         mailbox: str,
     ):
         """
-        Initializes Graph API credentials.
+        Initializes the MS Graph client credentials.
 
         Args:
             tenant_id: Azure Entra ID Tenant ID.
-            client_id: Azure App Registration Client (Application) ID.
+            client_id: Azure App Registration Client ID.
             client_secret: Azure App Client Secret.
-            mailbox: Target shared or user mailbox address.
+            mailbox: Target mailbox email address.
         """
         self.tenant_id = tenant_id
         self.client_id = client_id
@@ -44,10 +44,10 @@ class MSGraphClient:
 
     def get_token(self) -> str:
         """
-        Retrieves or reuses a cached OAuth2 access token.
+        Retrieves or reuses cached OAuth2 access token.
 
         Returns:
-            Bearer access token string.
+            Bearer access token.
         """
         if self._token and time.time() < self._token_expires_at - 60:
             return self._token
@@ -78,15 +78,15 @@ class MSGraphClient:
         folder: str = "Inbox",
     ) -> list[dict[str, Any]]:
         """
-        Fetches emails from the specified mailbox folder with optional OData filters.
+        Fetches raw email messages from the specified folder.
 
         Args:
-            top: Max count of emails to retrieve.
-            filter_query: OData $filter string (e.g., "receivedDateTime ge 2026-08-01T00:00:00Z").
-            folder: Mail folder name (default: "Inbox").
+            top: Max emails to retrieve per request.
+            filter_query: Optional OData filter string (e.g. 'receivedDateTime ge ...').
+            folder: Target mail folder (default: 'Inbox').
 
         Returns:
-            Standardized list of raw email dictionaries.
+            Standardized list of raw message dictionaries.
         """
         token = self.get_token()
         headers = {
@@ -132,13 +132,13 @@ class MSGraphClient:
 
     def fetch_attachments(self, message_id: str) -> list[dict[str, Any]]:
         """
-        Fetches all attachments for a specific message (for Excel/CSV/PDF handling).
+        Fetches raw attachments for a specific message.
 
         Args:
-            message_id: Microsoft Graph message unique identifier.
+            message_id: Microsoft Graph message ID.
 
         Returns:
-            List of raw attachment dictionaries including contentBytes and name.
+            List of raw attachment dictionaries.
         """
         token = self.get_token()
         headers = {

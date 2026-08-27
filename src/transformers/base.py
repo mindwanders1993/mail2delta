@@ -1,8 +1,7 @@
 """
-src.strategies.base_strategy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Abstract Base Class for all email extraction strategies.
-Enforces the interface contract for pluggable, interchangeable parsing strategies.
+src.transformers.base
+~~~~~~~~~~~~~~~~~~~~~
+Abstract Base Class defining the interface contract for all data extraction strategies.
 """
 
 from abc import ABC, abstractmethod

@@ -1,15 +1,16 @@
 """
-src.core.delta_sink
+src.sinks.delta_sink
 ~~~~~~~~~~~~~~~~~~~
-Universal Databricks Delta Lake Writer.
-Supports append and idempotent MERGE INTO upserts using arbitrary composite keys.
+Universal Databricks Delta Lake Writer and Storage Sink.
+Supports append and idempotent MERGE INTO upserts using dynamic composite keys.
+Zero knowledge of source protocols, emails, or extraction regexes.
 """
 
 import logging
 from typing import Any
 import pandas as pd
 
-logger = logging.getLogger("core.delta_sink")
+logger = logging.getLogger("sinks.delta_sink")
 
 
 class DeltaSink:

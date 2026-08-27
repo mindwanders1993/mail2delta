@@ -1,10 +1,33 @@
 """
-tests.test_router_and_strategy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Unit tests for KeyValueStrategy and StrategyRouter matching.
+tests.test_transformers
+~~~~~~~~~~~~~~~~~~~~~~~~
+Unit tests for the Transformers layer (KeyValueParser, CurrencyCleaner, StrategyRouter).
 """
 
-from router.strategy_router import StrategyRouter
+from transformers.currency_cleaner import CurrencyCleaner
+from transformers.strategy_router import StrategyRouter
+
+
+def test_currency_cleaner_global_rules():
+    # US & UK
+    assert CurrencyCleaner.clean("$1,500.50") == 1500.50
+    assert CurrencyCleaner.clean("($250.00)") == -250.00
+    assert CurrencyCleaner.clean("£10,000.00") == 10000.00
+
+    # Euro & Japanese Yen & Accounting Negatives
+    assert CurrencyCleaner.clean("€2,345.67") == 2345.67
+    assert CurrencyCleaner.clean("¥180,123,447") == 180123447.0
+    assert CurrencyCleaner.clean("￥1,500,000") == 1500000.0
+    assert CurrencyCleaner.clean("¥-25,226,790") == -25226790.0
+    assert CurrencyCleaner.clean("△500,000") == -500000.0
+    assert CurrencyCleaner.clean("▲1,234,567") == -1234567.0
+    assert CurrencyCleaner.clean("150,000円") == 150000.0
+
+    # Null / Empty values
+    assert CurrencyCleaner.clean("¥0") == 0.0
+    assert CurrencyCleaner.clean("-") is None
+    assert CurrencyCleaner.clean("#DIV/0!") is None
+    assert CurrencyCleaner.clean(None) is None
 
 
 def test_router_kamoshoji_corporate_email():

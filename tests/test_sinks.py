@@ -1,12 +1,11 @@
 """
-tests.test_delta_sink
-~~~~~~~~~~~~~~~~~~~~~
-Unit tests for DeltaSink dynamic SQL generation and key handling.
+tests.test_sinks
+~~~~~~~~~~~~~~~~
+Unit tests for the Sinks layer (DeltaSink composite-key MERGE SQL generator).
 """
 
 from unittest.mock import MagicMock
-import pandas as pd
-from core.delta_sink import DeltaSink
+from sinks.delta_sink import DeltaSink
 
 
 def test_delta_sink_merge_composite_keys():
@@ -25,7 +24,7 @@ def test_delta_sink_merge_composite_keys():
         merge_keys=["customer_code", "payment_due_label"],
     )
 
-    # Verify spark.sql was called with the composite key conditions
+    # Verify spark.sql was executed with the composite key conditions
     assert mock_spark.sql.called
     sql_query = mock_spark.sql.call_args[0][0]
     assert "target.customer_code = source.customer_code" in sql_query
