@@ -2,33 +2,68 @@
 notebooks.finance_ops_collections
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Production Databricks Job Orchestrator for Accounts Receivable (AR) Ingestion.
-Runs on Databricks Serverless Compute.
+Configured dynamically via environment variables and Databricks secrets.
 """
 
 import os
+import sys
 import pandas as pd
 from core.delta_sink import DeltaSink
 from core.ms_graph_client import MSGraphClient
 from router.strategy_router import StrategyRouter
 
 
+def get_credential(key: str, default: str | None = None) -> str:
+    """
+    Retrieves credentials from environment variables first,
+    with fallback to Databricks Secret Scope if available.
+    """
+    val = os.getenv(key)
+    if val:
+        return val
+
+    # Databricks dbutils secrets fallback
+    try:
+        import IPython
+        dbutils = IPython.get_ipython().user_ns.get("dbutils")
+        if dbutils:
+            secret_scope = os.getenv("DATABRICKS_SECRET_SCOPE", "finops_m365")
+            return dbutils.secrets.get(scope=secret_scope, key=key.lower())
+    except Exception:
+        pass
+
+    if default is not None:
+        return default
+
+    raise ValueError(
+        f"Missing required configuration '{key}'. "
+        f"Please set environment variable '{key}' or configure Databricks secret scope."
+    )
+
+
 def run_pipeline(spark_session) -> None:
     """
     Executes the end-to-end email ingestion pipeline:
-    1. Computes High-Watermark date with a 7-day safety buffer.
-    2. Fetches recent messages from MS Graph API.
-    3. Filters out already processed email IDs (Gate 1).
-    4. Routes new emails through the declarative YAML Strategy Router.
-    5. Merges records into the production Delta table with business keys (Gate 2).
+    1. Reads environment variables for Azure & Databricks configuration.
+    2. Computes High-Watermark date with a 7-day safety buffer.
+    3. Fetches candidate messages from MS Graph API.
+    4. Filters out already processed email IDs (Gate 1).
+    5. Routes new emails through the declarative YAML Strategy Router.
+    6. Merges records into the production Delta table with business keys (Gate 2).
     """
-    # 1. Configuration & Credentials (use Databricks Secrets or Env variables)
-    tenant_id = os.getenv("AZURE_TENANT_ID", "YOUR_TENANT_ID")
-    client_id = os.getenv("AZURE_CLIENT_ID", "YOUR_CLIENT_ID")
-    client_secret = os.getenv("AZURE_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-    mailbox = os.getenv("MAILBOX_ADDRESS", "svc_global_bi@adidas.com")
-    table_name = "lakehouse_dev.sadp_jpdna_pool_lhdev.finops_ar_collections"
+    # 1. Environment-Driven Configuration
+    tenant_id = get_credential("AZURE_TENANT_ID")
+    client_id = get_credential("AZURE_CLIENT_ID")
+    client_secret = get_credential("AZURE_CLIENT_SECRET")
 
-    config_path = "configs/customers.yaml"
+    mailbox = os.getenv("MAILBOX_ADDRESS", "svc_global_bi@adidas.com")
+    table_name = os.getenv(
+        "DELTA_TABLE_NAME",
+        "lakehouse_dev.sadp_jpdna_pool_lhdev.finops_ar_collections",
+    )
+    config_path = os.getenv("YAML_CONFIG_PATH", "configs/customers.yaml")
+    pipeline_timezone = os.getenv("PIPELINE_TIMEZONE", "Asia/Tokyo")
+
     router = StrategyRouter(config_path)
     client = MSGraphClient(tenant_id, client_id, client_secret, mailbox)
     sink = DeltaSink(spark_session)
@@ -62,7 +97,7 @@ def run_pipeline(spark_session) -> None:
     except Exception:
         processed_ids = set()
 
-    # 3. Fetch from MS Graph
+    # 3. Fetch candidate messages from MS Graph
     emails = client.fetch_messages(top=50, filter_query=filter_query)
     print(f"📥 Fetched {len(emails)} candidate messages from inbox.")
 
@@ -89,7 +124,7 @@ def run_pipeline(spark_session) -> None:
             records=records,
             table_name=table_name,
             merge_keys=keys_list,
-            timezone="Asia/Tokyo",
+            timezone=pipeline_timezone,
         )
         total_saved += count
 
