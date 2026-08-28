@@ -81,3 +81,11 @@ customers:
 ```bash
 PYTHONPATH=src pytest tests/
 ```
+
+---
+
+## 📚 Complete Guides & Documentation
+
+* **[Architecture & Operational Guide](docs/architecture_and_operation_guide.md)**: In-depth breakdown of the 3-tier architecture, two-gate deduplication, interactive Databricks testing snippets, and the 9-customer reference matrix.
+* **[Brainstorming & Architecture Blueprint](docs/brainstorming_and_requirements.md)**: Enterprise problem context, OData filters, and audit log specifications.
+* **[Office Integration Guide](docs/office_integration_guide.md)**: Steps for deploying to enterprise production Databricks workspaces.
