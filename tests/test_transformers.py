@@ -107,3 +107,46 @@ def test_router_imoto_prefix_code():
     assert record["customer_name"] == "Imoto"
     assert record["customer_code"] == "791089555"
     assert record["payment_amount"] == 50000000.0
+
+
+def test_router_gfoot_with_greeting():
+    yaml_config = """
+    customers:
+      GFoot:
+        subject_regex: "G-FOOT|ジーフット|Aeon Sports.*G-foot"
+        strategy: "key_value_table"
+        merge_keys:
+          - "customer_code"
+          - "payment_due_label"
+        params:
+          customer_name: "GFoot"
+          code_regex: "請求先コード"
+          amount_regex: "当月入金額|入金額|支払額|振込額|振込金額"
+          currency: "JPY"
+          default_label: "入金額"
+    """
+
+    router = StrategyRouter(yaml_config)
+
+    gfoot_email = {
+        "id": "msg-gfoot-001",
+        "subject": "【ご通知】株式会社ジーフット（G-FOOT）8月度お振込のお知らせ",
+        "email_sender": "ar@gfoot.jp",
+        "received_at": "2026-08-28T13:40:25Z",
+        "html_body": """
+        <p>お取引先様 各位</p>
+        <p>株式会社ジーフット 経理担当よりご連絡申し上げます。<br>下記の内容にてお振込手続きを完了いたしました。</p>
+        <p>請求先コード: 7930450000</p>
+        <p>・請求締日: 2026/08/20<br>・総請求額: ¥84,200,000<br>・相殺控除額: △¥4,200,000<br>・当月入金額: ¥80,000,000</p>
+        """,
+    }
+
+    record, merge_keys = router.process_email(gfoot_email)
+
+    assert record is not None
+    assert record["customer_name"] == "GFoot"
+    assert record["customer_code"] == "7930450000"
+    assert record["payment_amount"] == 80000000.0
+    assert "当月入金額" in record["payment_due_label"]
+    assert record["currency"] == "JPY"
+

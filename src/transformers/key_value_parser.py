@@ -112,22 +112,34 @@ class KeyValueParser(BaseEmailStrategy):
 
         for idx, line in enumerate(lines):
             if re.search(pattern, line, re.IGNORECASE):
-                # Check current line for currency amount
-                m_curr = re.search(r"[$€£¥￥₹₩]\s*([\d,]+(?:\.\d+)?)", line)
+                # 1. Check if the line itself contains a currency amount
+                m_curr = re.search(r"([$€£¥￥₹₩△▲\-]?\s*[\d,]{3,}(?:\.\d+)?|\b\d+(?:\.\d+)?\s*円)", line)
                 if m_curr:
                     amt = CurrencyCleaner.clean(m_curr.group(0))
                     if amt is not None:
                         return amt, line
 
-                # Check next line
-                if idx + 1 < len(lines):
-                    amt = CurrencyCleaner.clean(lines[idx + 1])
+                # Check if there is a colon or delimiter followed by number/amount
+                m_colon = re.search(r"[:：]\s*([$€£¥￥₹₩△▲\-]?\s*[\d,]+(?:\.\d+)?|\d+\s*円)", line)
+                if m_colon:
+                    amt = CurrencyCleaner.clean(m_colon.group(1))
                     if amt is not None:
                         return amt, line
 
-        # Fallback to general currency scan if specific line not found
-        m_fallback = re.search(r"[$€£¥￥₹₩]\s*([\d,]+(?:\.\d+)?)", text)
-        if m_fallback:
-            return CurrencyCleaner.clean(m_fallback.group(0)), None
+                # 2. Check next line (for vertical KV or table row/cell pairs)
+                if idx + 1 < len(lines):
+                    next_line = lines[idx + 1]
+                    if not re.search(r"コード|日付|番号|ID|No|締日|明細|様", next_line, re.IGNORECASE):
+                        amt = CurrencyCleaner.clean(next_line)
+                        if amt is not None:
+                            return amt, line
+
+        # Fallback to general currency scan if specific keyword line not found
+        for line in lines:
+            m_fallback = re.search(r"([$€£¥￥₹₩△▲]\s*[\d,]{3,}(?:\.\d+)?)", line)
+            if m_fallback:
+                amt = CurrencyCleaner.clean(m_fallback.group(0))
+                if amt is not None:
+                    return amt, line
 
         return None, None

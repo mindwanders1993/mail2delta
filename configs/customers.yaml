@@ -39,7 +39,7 @@ customers:
     params:
       customer_name: "GFoot"
       code_regex: "請求先コード"
-      amount_regex: "入金額|支払額|振込"
+      amount_regex: "当月入金額|入金額|支払額|振込額|振込金額"
       currency: "JPY"
       default_label: "入金額"
 
@@ -52,7 +52,7 @@ customers:
     params:
       customer_name: "ABCMart"
       code_regex: "請求先コード"
-      amount_regex: "支払額|入金額|振込"
+      amount_regex: "支払額|当月入金額|入金額|振込額|振込金額"
       currency: "JPY"
       default_label: "支払額"
 

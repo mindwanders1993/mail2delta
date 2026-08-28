@@ -39,6 +39,12 @@ class CurrencyCleaner:
         if not text or text in ["-", "―", "ー", "/", "#DIV/0!", "#N/A", "#VALUE!", "nan", "None", "null"]:
             return None
 
+        # Check if text contains invalid words (e.g. labels, codes)
+        # Allowed chars: digits, commas, dots, whitespace, currency signs, parentheses, triangles, 円, JPY, USD, EUR, GBP
+        clean_check = re.sub(r"[0-9,\.\s$€£¥￥₹₩△▲\(\)\-円]|JPY|USD|EUR|GBP", "", text, flags=re.IGNORECASE)
+        if clean_check.strip():
+            return None
+
         is_negative = False
         if ("-" in text) or (text.startswith("(") and text.endswith(")")) or ("△" in text) or ("▲" in text):
             is_negative = True
