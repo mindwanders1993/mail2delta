@@ -81,8 +81,27 @@ class StrategyRouter:
         if isinstance(source, dict):
             return source
 
-        if os.path.exists(source):
-            with open(source, "r", encoding="utf-8") as f:
-                return yaml.safe_load(f)
+        if isinstance(source, str):
+            # Check candidate paths if it is a file path
+            candidate_paths = [
+                source,
+                os.path.abspath(source),
+                os.path.join(os.getcwd(), source),
+                os.path.join(os.path.dirname(__file__), "..", "..", source),
+                os.path.join(os.path.dirname(__file__), "..", source),
+            ]
+            for path in candidate_paths:
+                if os.path.exists(path) and os.path.isfile(path):
+                    with open(path, "r", encoding="utf-8") as f:
+                        loaded = yaml.safe_load(f)
+                        if isinstance(loaded, dict):
+                            return loaded
 
-        return yaml.safe_load(source)
+            # Try parsing directly as inline YAML string content
+            loaded = yaml.safe_load(source)
+            if isinstance(loaded, dict):
+                return loaded
+
+        raise ValueError(
+            f"Invalid configuration source. Expected a dict or valid YAML file/string, got: {source!r}"
+        )
